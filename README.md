@@ -1,2 +1,2 @@
-Terraform-Azure Workshop
+Terraform-Azure Test
 ========================
