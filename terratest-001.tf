@@ -1,25 +1,12 @@
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "=2.97.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {}
-}
-
-#### ÉfÅ[É^ÉäÉ\Å[ÉXÇÃê›íË
+#### „Éá„Éº„Çø„É™„ÇΩ„Éº„Çπ„ÅÆË®≠ÂÆö
 data "azurerm_resource_group" "main" {
-  name = var.resource_group_name
+  name = local.resource_group_name
 }
 
 data "azurerm_subnet" "main" {
-  name                 = var.subnet_name
-  virtual_network_name = var.vnet_name
-  resource_group_name  = var.vnet_resource_group_name
+  name                 = local.subnet_name
+  virtual_network_name = local.vnet_name
+  resource_group_name  = local.vnet_resource_group_name
 }
 
 data "azurerm_image" "image" {
@@ -27,11 +14,11 @@ data "azurerm_image" "image" {
   resource_group_name = "terraform-test"
 }
 
-#### VMÇÃê›íË
+#### VM„ÅÆË®≠ÂÆö
 
-## NICÇçÏÇÈ
+## NIC„ÅÆ‰ΩúÊàê
 resource "azurerm_network_interface" "windows_nic" {
-  name                = "${var.hostname}-nic1"
+  name                = "${local.hostname}-nic1"
   location            = data.azurerm_resource_group.main.location
   resource_group_name = data.azurerm_resource_group.main.name
 
@@ -39,108 +26,85 @@ resource "azurerm_network_interface" "windows_nic" {
     name                          = "ipconfig"
     subnet_id                     = data.azurerm_subnet.main.id
     private_ip_address_allocation = "Static"
-    private_ip_address            = var.IPAddress
+    private_ip_address            = local.IPAddress
   }
 
   tags = {
-    server = "${var.hostname}"
+    server = "${local.hostname}"
   }
 }
 
-## VMÇçÏÇÈ
-resource "azurerm_windows_virtual_machine" "windows" {
-  name                  = var.hostname
+## VM„ÅÆ‰ΩúÊàê
+resource "azurerm_virtual_machine" "windows" {
+  name                  = local.hostname
   location              = data.azurerm_resource_group.main.location
   resource_group_name   = data.azurerm_resource_group.main.name
-  size                  = var.vmsize
-  admin_username        = "localadmin"
-  admin_password        = var.admin_password
+  vm_size                  = local.vmsize
   network_interface_ids = [azurerm_network_interface.windows_nic.id]
+  delete_os_disk_on_termination = true
   tags = {
-    server = "${var.hostname}"
+    server = "${local.hostname}"
   }
 
   os_profile {
-    computer_name  = var.hostname
+    computer_name  = local.hostname
     admin_username = "localadmin"
-    admin_password = "${var.hostname}abc"
+    admin_password = "${local.hostname}abc"
   }
   os_profile_windows_config {
     enable_automatic_upgrades = false
     provision_vm_agent        = false
   }
   storage_image_reference {
-    id = data.azurerm_image.tf_name_vmimage.id
+    id = data.azurerm_image.image.id
   }
   storage_os_disk {
-    name              = "${var.hostname}-osdisk1"
+    name              = "${local.hostname}-osdisk1"
     caching           = "ReadWrite"
     create_option     = "FromImage"
-    managed_disk_type = var.managed_disk_type
-    tags = {
-      server = "${var.hostname}"
-    }
+    managed_disk_type = local.managed_disk_type
   }
 }
 
-resource "azurerm_virtual_machine_extension" "windows_custom_script" {
-  name                 = "extension-windows"
-  virtual_machine_id   = azurerm_windows_virtual_machine.windows.id
-  publisher            = "Microsoft.Compute"
-  type                 = "CustomScriptExtension"
-  type_handler_version = "1.10"
 
-  settings = <<SETTINGS
-    {
-        "commandToExecute":"powershell -ExecutionPolicy Unrestricted -File Install-zabbix-agent.ps1",
-        "fileUris": ["https://gist.githubusercontent.com/jacopen/c33657b2c582f1ff8f2c86792b94e5ec/raw/cbd761c8c562a93082f374307b4450b4eb9de6eb/Install-zabbix-agent.ps1"]
-    }
-SETTINGS
+#### Â§âÊï∞„ÅÆÂÆ£Ë®Ä
+
+## „Åª„ÅºÂõ∫ÂÆö
+
+locals{
+ vnet_name = "vnet2"
+ vnet_resource_group_name = "PoC-virtualwanrg"
 }
 
 
-#### ïœêîÇÃêÈåæ
+## „Çµ„Éº„ÉêÊØé
 
-## ÇŸÇ⁄å≈íË
-
-variable "vnet_name" {
-  default = "vnet2"
+# „Çµ„Éº„ÉêÂêç
+locals {
+ hostname = "terratest-01"
 }
 
-variable "vnet_resource_group_name" {
-  default = "PoC-virtualwanrg"
+# „Çµ„Éº„Éê„Å®Èñ¢ÈÄ£„É™„ÇΩ„Éº„Çπ„ÅåÂ±û„Åô„Çã„É™„ÇΩ„Éº„Çπ„Ç∞„É´„Éº„Éó
+locals {
+ resource_group_name = "terraform-test1"
 }
 
-
-## ÉTÅ[Éoñà
-
-# ÉTÅ[Éoñº
-variable "hostname" {
-  default = "terratest-001"
+# „Çµ„Éº„Éê„ÇíÊé•Á∂ö„Åô„Çã„Çµ„Éñ„Éç„ÉÉ„Éà
+locals {
+ subnet_name = "vnet2-subnet1"
 }
 
-# ÉTÅ[ÉoÇ∆ä÷òAÉäÉ\Å[ÉXÇ™ëÆÇ∑ÇÈÉäÉ\Å[ÉXÉOÉãÅ[Év
-variable "resource_group_name" {
-  default = "terraform-test1"
+# nic„Å´‰ªò‰∏é„Åô„ÇãIP„Ç¢„Éâ„É¨„Çπ
+locals {
+ IPAddress = "172.168.160.35"
 }
 
-# ÉTÅ[ÉoÇê⁄ë±Ç∑ÇÈÉTÉuÉlÉbÉg
-variable "subnet_name" {
-  default = "vnet2-subnet1"
+# ‰ªÆÊÉ≥„Éû„Ç∑„É≥„ÅÆ„Çµ„Ç§„Ç∫
+locals {
+ vmsize = "Standard_B2s"
 }
 
-# nicÇ…ïtó^Ç∑ÇÈIPÉAÉhÉåÉX
-variable "IPAddress" {
-  default = "172.168.160.25"
+# „Éá„Ç£„Çπ„ÇØ„Çø„Ç§„Éó
+locals {
+ managed_disk_type = "StandardSSD_LRS"
 }
-
-# âºëzÉ}ÉVÉìÇÃÉTÉCÉY
-variable "vmsize" {
-  default = "Standard_B2"
-}
-
-# ÉfÉBÉXÉNÉ^ÉCÉv
-variable "managed_disk_type" {
-  default = "StandardSSD_LRS"
-}
-
