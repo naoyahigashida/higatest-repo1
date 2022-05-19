@@ -1,3 +1,15 @@
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+}
+
 #### データリソースの設定
 data "azurerm_resource_group" "main2" {
   name = local.terratest-002_resource_group_name
