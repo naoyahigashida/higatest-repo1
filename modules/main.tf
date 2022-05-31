@@ -7,17 +7,11 @@ terraform {
 }
 
 provider "azurerm" {
-  client_id                  = "31bb97c1-d147-4645-8f79-94bb38cf6482"
-  tenant_id                  = "1a721771-b78a-4079-9ec5-38695d718adb"
-  subscription_id            = "64c864fc-0f94-49e8-8089-f3a2e31d1cfe"
-  client_secret              = ".Rg7Q~Zt6r8zADkltkzitCAMES8~4WYg4F3jA"
   skip_provider_registration = true
   features {}
 }
-####
 
-
-#### ??????????
+#### データリソースの設定
 data "azurerm_resource_group" "main" {
   name = var.resource_group_name
 }
@@ -33,16 +27,17 @@ data "azurerm_image" "image" {
   resource_group_name = "terraform-test"
 }
 
-#### VM???
+#### VMの設定
 
-## NIC???
+## NICの作成
 resource "azurerm_network_interface" "windows_nic" {
   name                = "${var.hostname}-nic1"
   location            = data.azurerm_resource_group.main.location
   resource_group_name = data.azurerm_resource_group.main.name
+  dns_servers         = var.dns_servers
 
   ip_configuration {
-    name                          = "ipconfig"
+    name                          = "ipconfig1"
     subnet_id                     = data.azurerm_subnet.main.id
     private_ip_address_allocation = "Static"
     private_ip_address            = var.IPAddress
@@ -53,7 +48,7 @@ resource "azurerm_network_interface" "windows_nic" {
   }
 }
 
-## VM???
+## VMの作成
 resource "azurerm_virtual_machine" "windowsvm" {
   name                  = var.hostname
   location              = data.azurerm_resource_group.main.location
