@@ -27,6 +27,10 @@ variable "admin_username" {
 # nicに付与するIPアドレス
 variable "IPAddress" {
 }
+# DNS
+variable "dns_servers" {
+  default = ["172.168.160.1","172.168.160.2"]
+}
 # 仮想マシンのサイズ
 variable "vmsize" {
 }
