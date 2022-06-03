@@ -23,7 +23,7 @@ data "azurerm_subnet" "main" {
 }
 
 data "azurerm_image" "image" {
-  name                = "terraformtest-imagev1"
+  name                = "terraformtest-imagev3"
   resource_group_name = "terraform-test"
 }
 
@@ -78,4 +78,18 @@ resource "azurerm_virtual_machine" "windowsvm" {
     create_option     = "FromImage"
     managed_disk_type = var.managed_disk_type
   }
+}
+
+resource "azurerm_virtual_machine_extension" "windows_install" {
+  name                 = "${var.hostname}-install"
+  virtual_machine_id   = azurerm_virtual_machine.windowsvm.id
+  publisher            = "Microsoft.Compute"
+  type                 = "CustomScriptExtension"
+  type_handler_version = "1.10"
+
+  settings = <<EOF
+    {
+      "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File C:\\Source\\ps\\zabbix_install.ps1"
+    }
+EOF
 }
